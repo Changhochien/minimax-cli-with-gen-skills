@@ -103,8 +103,10 @@ def generate(
             seed=seed,
             prompt_optimizer=optimizer,
         )
-        if output and result.get("success") and result.get("images"):
-            data = result["images"][0]
+        images = result.get("data", {}).get("image_base64") or []
+        status_ok = result.get("base_resp", {}).get("status_code") == 0
+        if output and status_ok and images:
+            data = images[0]
             out_path = _resolve_output_path("output.png", output)
             if data.startswith("data:"):
                 _, b64 = data.split(",", 1)
@@ -149,8 +151,10 @@ def synthesize(
             audio_format=audio_format, sample_rate=sample_rate, bitrate=bitrate,
             channel=channel, output_format=output_format,
         )
-        if output and result.get("success") and result.get("audio"):
-            _save_hex_to_file(result["audio"], _resolve_output_path("output.mp3", output))
+        status_ok = result.get("base_resp", {}).get("status_code") == 0
+        audio_data = result.get("data", {}).get("audio") or result.get("audio")
+        if output and status_ok and audio_data:
+            _save_hex_to_file(audio_data, _resolve_output_path("output.mp3", output))
         else:
             json_output(result)
 
