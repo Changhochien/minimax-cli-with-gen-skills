@@ -8,8 +8,8 @@
 |------|---------|-------------|
 | `--prompt, -p` | required | Image description |
 | `--aspect-ratio, -r` | null | `1:1`, `16:9`, `9:16`, `4:3`, `3:2`, `2:3`, `3:4`, `21:9` |
-| `--width` | null | Custom width (512–2048, divisible by 8) |
-| `--height` | null | Custom height (512–2048, divisible by 8) |
+| `--width` | null | Custom width (512–2048, divisible by 8). Note: 2048x2048 square is rejected by the API; max square is ~1792x1792. |
+| `--height` | null | Custom height (512–2048, divisible by 8). Note: 2048x2048 square is rejected by the API; max square is ~1792x1792. |
 | `--model, -m` | `image-01` | Model identifier |
 | `--response-format, -f` | `base64` | `base64` or `url` |
 | `--number, -n` | `1` | Number of images (1–9) |
