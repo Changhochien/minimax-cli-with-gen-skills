@@ -134,20 +134,34 @@ minimax music generate --prompt "Energetic industrial" --lyrics "<pasted lyrics>
 
 ## Claude Code Integration
 
-This CLI is designed to be called by Claude Code Skills. A skill instructs Claude to invoke `minimax` via the Bash tool — zero MCP tool schema overhead.
+The `install.sh` automatically installs the Claude Code skill to `~/.claude/skills/minimax/`. The skill routes to the right subcommand based on keywords.
 
-Example skill instruction:
+**Token cost:**
+- Skill frontmatter (routing): ~50 tokens at session start
+- Full skill + reference: ~1,500 tokens when invoked
+- vs MCP with 15 tools: ~55,000 tokens always
+
+**Skill structure:**
 ```
-Use the minimax CLI to generate images:
-  minimax image generate --prompt "<description>" --aspect-ratio 16:9
+minimax/
+├── SKILL.md              (~450 tokens — routing + quick examples)
+└── reference/
+    ├── image.md          (~400 tokens — full image options)
+    ├── speech.md         (~500 tokens — full speech options)
+    ├── video.md          (~450 tokens — full video options)
+    └── music.md          (~500 tokens — full music options)
 ```
 
-See the `.claude/skills/` directory in your project for MiniMax skill files.
+Each reference file is loaded on-demand when that modality is used.
 
 ## Uninstall
 
 ```bash
+# CLI
 uv tool uninstall minimax
+
+# Claude Code skill
+rm -rf ~/.claude/skills/minimax
 ```
 
 ## Development
@@ -161,12 +175,20 @@ uv run python src/minimax_cli.py --help
 uv run python src/minimax_cli.py image --help
 uv run python src/minimax_cli.py speech --help
 uv run python src/minimax_cli.py video --help
+uv run python src/minimax_cli.py music --help
 ```
 
 ## Architecture
 
 ```
 minimax/
+├── .claude/skills/minimax/   # Claude Code skill
+│   ├── SKILL.md               # Routing + quick examples (~450 tokens)
+│   └── reference/             # Per-modality detail (loaded on demand)
+│       ├── image.md
+│       ├── speech.md
+│       ├── video.md
+│       └── music.md
 ├── src/
 │   ├── minimax/           # Shared Python package
 │   │   ├── api/           # HTTP client (httpx, regional host support)
