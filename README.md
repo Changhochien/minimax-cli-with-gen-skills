@@ -139,7 +139,6 @@ The `install.sh` automatically installs the Claude Code skill to `~/.claude/skil
 **Token cost:**
 - Skill frontmatter (routing): ~50 tokens at session start
 - Full skill + reference: ~1,500 tokens when invoked
-- vs MCP with 15 tools: ~55,000 tokens always
 
 **Skill structure:**
 ```
