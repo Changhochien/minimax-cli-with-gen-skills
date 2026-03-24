@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -10,26 +11,38 @@ import httpx
 class MiniMaxClient:
     """Thread-safe shared HTTP client for MiniMax API."""
 
-    BASE_URL = "https://api.minimax.io/v1"
-    # Regional hosts: Global → api.minimax.io, Mainland China → api.minimaxi.com
     _DEFAULT_HOSTS = {"global": "https://api.minimax.io", "cn": "https://api.minimaxi.com"}
 
     def __init__(self, api_key: str | None = None, timeout: float = 120.0) -> None:
-        self.api_key = api_key or os.environ.get("MINIMAX_API_KEY", "")
-        if not self.api_key:
+        # Load credentials from creds.toml if no env var and no argument
+        if not api_key:
+            api_key = os.environ.get("MINIMAX_API_KEY")
+            if not api_key:
+                api_key = self._load_creds_key()
+        if not api_key:
             raise ValueError("MINIMAX_API_KEY is required")
+        self.api_key = api_key
 
         # Support regional host override
         host = os.environ.get("MINIMAX_API_HOST", "").strip().lower()
         if host in self._DEFAULT_HOSTS:
-            self.BASE_URL = self._DEFAULT_HOSTS[host]
+            self.BASE_URL = self._DEFAULT_HOSTS[host] + "/v1"
         elif host.startswith("http"):
-            self.BASE_URL = host
+            self.BASE_URL = host.rstrip("/")
         else:
-            self.BASE_URL = self._DEFAULT_HOSTS["global"]
+            self.BASE_URL = self._DEFAULT_HOSTS["global"] + "/v1"
 
         self.timeout = timeout
         self._client: httpx.AsyncClient | None = None
+
+    def _load_creds_key(self) -> str | None:
+        """Read API key from ~/.config/minimax/creds.toml."""
+        creds_path = Path.home() / ".config" / "minimax" / "creds.toml"
+        if creds_path.exists():
+            for line in creds_path.read_text().splitlines():
+                if line.startswith("MINIMAX_API_KEY="):
+                    return line.split("=", 1)[1].strip() or None
+        return None
 
     def _headers(self) -> dict[str, str]:
         return {

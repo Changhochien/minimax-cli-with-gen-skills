@@ -29,6 +29,13 @@ else
     TMPDIR=$(mktemp -d)
     git clone --depth 1 https://github.com/Changhochien/minimax "$TMPDIR"
     SCRIPT_DIR="$TMPDIR"
+
+    # Shallow clone may miss .claude/ if it was added in older commits — verify
+    if [ ! -d "$SCRIPT_DIR/.claude/skills/minimax" ]; then
+        echo "(Deepening clone to fetch skill files...)"
+        git fetch --depth=50 origin ".claude/skills/minimax" 2>/dev/null || true
+        git checkout origin/main -- ".claude/" 2>/dev/null || true
+    fi
 fi
 
 # Check for uv
@@ -92,6 +99,29 @@ if [ "$SKILLS_ONLY" = false ]; then
 MINIMAX_API_KEY=$API_KEY
 MINIMAX_API_HOST=$HOST
 EOF
+
+    # Export env vars for current session
+    export MINIMAX_API_KEY="$API_KEY"
+    export MINIMAX_API_HOST="$HOST"
+
+    # Add to shell profile so it persists across sessions
+    SHELL_RC=""
+    if [ -n "$ZSH_VERSION" ] && [ -f "$HOME/.zshrc" ]; then
+        SHELL_RC="$HOME/.zshrc"
+    elif [ -f "$HOME/.bashrc" ]; then
+        SHELL_RC="$HOME/.bashrc"
+    elif [ -f "$HOME/.bash_profile" ]; then
+        SHELL_RC="$HOME/.bash_profile"
+    fi
+    if [ -n "$SHELL_RC" ]; then
+        if ! grep -q "MINIMAX_API_KEY" "$SHELL_RC" 2>/dev/null; then
+            echo "" >> "$SHELL_RC"
+            echo "# MiniMax API credentials" >> "$SHELL_RC"
+            echo "export MINIMAX_API_KEY=\"$API_KEY\"" >> "$SHELL_RC"
+            echo "export MINIMAX_API_HOST=\"$HOST\"" >> "$SHELL_RC"
+            echo "Added credentials to $SHELL_RC — will be loaded in new shells"
+        fi
+    fi
 
     if [ "$HOST" = "cn" ]; then
         echo "Using Mainland China API endpoint (api.minimaxi.com)"
