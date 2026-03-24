@@ -20,30 +20,31 @@ Designed for Claude Code and OpenClaw: zero MCP token overhead, skills call the 
 
 ## Install
 
+**One command, no clone required:**
+
 ```bash
-curl -sL https://raw.githubusercontent.com/Changhochien/minimax/main/install.sh | bash -s -- --key YOUR_MINIMAX_KEY
+curl -sL https://raw.githubusercontent.com/Changhochien/minimax/main/install.sh | bash -s -- --key=YOUR_MINIMAX_KEY
 ```
 
-Or clone and run:
+**With Mainland China API:**
 
 ```bash
-gh repo clone Changhochien/minimax
-cd minimax
-chmod +x install.sh
+curl -sL https://raw.githubusercontent.com/Changhochien/minimax/main/install.sh | bash -s -- --key=YOUR_KEY --host=cn
+```
+
+**Or clone and run:**
+
+```bash
+gh repo clone Changhochien/minimax && cd minimax
 ./install.sh --key YOUR_MINIMAX_KEY
+./install.sh --key YOUR_KEY --host cn   # Mainland China
 ```
 
 This installs `minimax` as a CLI tool via `uv tool install` and saves your API key to `~/.config/minimax/creds.toml`.
 
 ## Regional API hosts
 
-By default the CLI uses `api.minimax.io` (Global). For Mainland China use `--host cn`:
-
-```bash
-./install.sh --key YOUR_KEY --host cn
-```
-
-Or set `MINIMAX_API_HOST=cn` in `~/.config/minimax/creds.toml`.
+By default the CLI uses `api.minimax.io` (Global). For Mainland China use `--host cn` or set `MINIMAX_API_HOST=cn` in `~/.config/minimax/creds.toml`.
 
 ## Manual install
 

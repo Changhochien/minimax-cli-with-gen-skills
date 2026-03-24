@@ -1,21 +1,35 @@
 #!/bin/bash
 # Install minimax CLI tool and Claude Code skill
 #
-# Usage:
-#   gh repo clone Changhochien/minimax && cd minimax
-#   ./install.sh --key YOUR_KEY              # Global API (default)
-#   ./install.sh --key YOUR_KEY --host cn     # Mainland China API
+# One-liner (no clone required):
+#   curl -sL https://raw.githubusercontent.com/Changhochien/minimax/main/install.sh | bash -s -- --key YOUR_KEY
 #
-# Installs:
-#   1. minimax CLI via uv tool
-#   2. Claude Code skill in ~/.claude/skills/minimax/
+# Or clone first:
+#   gh repo clone Changhochien/minimax && cd minimax
+#   ./install.sh --key YOUR_KEY
+#
+# Options:
+#   --key <KEY>        MiniMax API key (required unless --skills-only)
+#   --host global|cn   API region (default: global)
+#   --skills-only      Only install the skill, skip CLI
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-
 echo "=== minimax installer ==="
 echo ""
+
+# Determine script directory — works whether run as ./install.sh or via curl|bash
+if [ -n "$SCRIPT_DIR" ] && [ -d "$SCRIPT_DIR/.claude" ]; then
+    : # Already set and valid
+elif [ -n "$0" ] && [ -d "$(dirname "$0")/.claude" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+else
+    # Running via curl|bash — clone to temp dir
+    echo "(Detected curl|bash invocation, cloning repo to temp dir...)"
+    TMPDIR=$(mktemp -d)
+    git clone --depth 1 https://github.com/Changhochien/minimax "$TMPDIR"
+    SCRIPT_DIR="$TMPDIR"
+fi
 
 # Check for uv
 if ! command -v uv &>/dev/null; then
@@ -96,7 +110,7 @@ if [ -d "$SKILL_SRC" ]; then
     cp -r "$SKILL_SRC" "$SKILL_DEST"
     echo "Skill installed to ~/.claude/skills/minimax/"
 else
-    echo "Note: No Claude Code skill found in .claude/skills/minimax/"
+    echo "Note: No Claude Code skill found"
 fi
 
 echo ""
