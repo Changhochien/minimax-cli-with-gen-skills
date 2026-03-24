@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "minimax"
+version = "0.1.0"
+description = "MiniMax unified CLI and MCP server — image, speech, and video generation."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Changho Chen", email = "changho@example.com" },
+]
+keywords = ["minimax", "ai", "tts", "speech", "image-generation", "video-generation", "mcp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "httpx>=0.27.0",
+    "typer>=0.15.0",
+    "fastmcp>=1.0.0",
+]
+
+[project.optional-dependencies]
+cli = [
+    "typer[all]>=0.15.0",
+]
+
+[project.scripts]
+minimax = "minimax_cli:app"
+minimax-mcp = "minimax.mcp:run"
+
+[project.urls]
+Homepage = "https://github.com/Changhochien/minimax"
+Repository = "https://github.com/Changhochien/minimax"
+
+[tool.hatch.build.targets.sdist]
+include = ["src/"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/minimax", "src/minimax_cli.py"]

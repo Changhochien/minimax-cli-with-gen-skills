@@ -1,0 +1,1 @@
+"""MiniMax API shared client."""
