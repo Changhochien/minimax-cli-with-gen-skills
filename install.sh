@@ -1,12 +1,11 @@
 #!/bin/bash
-# Install minimax for Claude Code (MCP server)
+# Install minimax CLI tool
 #
 # Usage:
 #   gh repo clone Changhochien/minimax && cd minimax
-#   ./install.sh --key YOUR_KEY              # user-scope (default)
-#   ./install.sh --key YOUR_KEY --project     # project-scope (writes to .mcp.json)
+#   ./install.sh --key YOUR_KEY
 #
-# For project-scope: run inside a Claude Code project directory.
+# Installs the minimax CLI via uv tool and saves API key to ~/.config/minimax/creds.toml.
 
 set -e
 
@@ -19,15 +18,8 @@ if ! command -v uv &>/dev/null; then
     exit 1
 fi
 
-# Check for claude
-if ! command -v claude &>/dev/null; then
-    echo "Error: Claude Code CLI is required. Install: https://claude.ai/code"
-    exit 1
-fi
-
 # Parse arguments
 API_KEY=""
-SCOPE="user"
 while [[ $# -gt 0 ]]; do
     case $1 in
         --key)
@@ -38,13 +30,9 @@ while [[ $# -gt 0 ]]; do
             API_KEY="${1#*=}"
             shift
             ;;
-        --project)
-            SCOPE="project"
-            shift
-            ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--key <KEY>] [--project]"
+            echo "Usage: $0 [--key <KEY>]"
             exit 1
             ;;
     esac
@@ -55,32 +43,21 @@ if [ -z "$API_KEY" ]; then
     exit 1
 fi
 
-SCOPE_FLAG=""
-if [ "$SCOPE" = "project" ]; then
-    SCOPE_FLAG="-s project"
-    echo "Scope: project (.mcp.json)"
-else
-    echo "Scope: user (~/.claude.json)"
-fi
+echo "Installing minimax CLI..."
+uv tool install --from "git+https://github.com/Changhochien/minimax" minimax
 
-echo ""
-echo "Registering MCP server..."
-claude mcp add-json $SCOPE_FLAG minimax "$(cat <<EOF
-{
-  "type": "stdio",
-  "command": "uvx",
-  "args": ["--from", "git+https://github.com/Changhochien/minimax", "minimax"],
-  "env": { "MINIMAX_API_KEY": "$API_KEY" }
-}
-EOF
-)"
+# Save API key to config file (best practice from CLI design research)
+CONFIG_DIR="$HOME/.config/minimax"
+mkdir -p "$CONFIG_DIR"
+echo "MINIMAX_API_KEY=$API_KEY" > "$CONFIG_DIR/creds.toml"
 
 echo ""
 echo "=== Done ==="
-echo "Restart Claude Code, then use MCP tools:"
-echo "  mcp__minimax__generate_image()"
-echo "  mcp__minimax__synthesize_speech()"
-echo "  mcp__minimax__generate_video()"
+echo "API key saved to ~/.config/minimax/creds.toml"
 echo ""
-echo "Or install the CLI:"
-echo "  uv tool install --from 'git+https://github.com/Changhochien/minimax' minimax"
+echo "Usage:"
+echo "  minimax image generate --prompt 'A rubber belt' --aspect-ratio 16:9"
+echo "  minimax speech synthesize --text 'Hello' --voice-id Deep_Voice_Man"
+echo "  minimax video generate --prompt 'Conveyor belt in motion'"
+echo ""
+echo "Add skills to your project .claude/skills/ directory to have Claude Code use these commands."

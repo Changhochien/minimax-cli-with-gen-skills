@@ -1,6 +1,8 @@
 # minimax
 
-Unified MiniMax CLI and MCP server — image generation, text-to-speech, and video generation in one package.
+MiniMax CLI — image generation, text-to-speech, and video generation.
+
+Designed for Claude Code and OpenClaw: zero MCP token overhead, skills call the CLI directly.
 
 ## Modules
 
@@ -13,7 +15,6 @@ Unified MiniMax CLI and MCP server — image generation, text-to-speech, and vid
 ## Prerequisites
 
 - [uv](https://github.com/astral-sh/uv)
-- [Claude Code](https://claude.ai/code)
 - MiniMax API key with Token Plan enabled — get one at [platform.minimax.io](https://platform.minimax.io)
 
 ## Install
@@ -31,53 +32,41 @@ chmod +x install.sh
 ./install.sh --key YOUR_MINIMAX_KEY
 ```
 
-### User scope (default)
-Installs to `~/.claude.json` — MCP available in all Claude Code sessions.
+This installs `minimax` as a CLI tool via `uv tool install` and saves your API key to `~/.config/minimax/creds.toml`.
 
-### Project scope
-Installs to `.mcp.json` in the current directory:
+## Manual install
 
 ```bash
-./install.sh --key YOUR_MINIMAX_KEY --project
-```
-
-**Restart Claude Code** after installation.
-
-## Manual MCP install
-
-```bash
-claude mcp add-json minimax '{
-  "type": "stdio",
-  "command": "uvx",
-  "args": ["--from", "git+https://github.com/Changhochien/minimax", "minimax"],
-  "env": { "MINIMAX_API_KEY": "your-key" }
-}'
-```
-
-## CLI install
-
-```bash
-# User-wide (requires uv)
+# CLI tool
 uv tool install --from "git+https://github.com/Changhochien/minimax" minimax
 
-# Or via pip
-pip install git+https://github.com/Changhochien/minimax
+# Set API key
+export MINIMAX_API_KEY=your-key
+# Or save to ~/.config/minimax/creds.toml
 ```
 
-## CLI Usage
+## Usage
 
 ```bash
 # Image generation (T2I)
 minimax image generate --prompt "A precision rubber belt on white" --aspect-ratio 16:9
 
 # Image generation (I2I)
-minimax image generate --prompt "Same product on dark industrial background" \\
+minimax image generate --prompt "Same product on dark industrial background" \
   --image https://example.com/photo.jpg --aspect-ratio 16:9
+
+# Character-consistent I2I
+minimax image generate --prompt "Same person in a factory uniform" \
+  --image https://example.com/product-photo.jpg \
+  --subject-ref https://example.com/portrait.jpg
+
+# Save image to file
+minimax image generate --prompt "Product hero shot" --aspect-ratio 16:9 --output hero.jpg
 
 # Text-to-speech
 minimax speech synthesize --text "Welcome to our product line" --voice-id Deep_Voice_Man --emotion calm
 
-# Async long-form TTS
+# Async long-form TTS (for texts >10,000 chars)
 minimax speech long-create --text "$(cat long-text.txt)" --voice-id English_Insightful_Speaker
 minimax speech long-query <task_id>
 
@@ -86,48 +75,48 @@ minimax speech upload --audio https://example.com/ceo-voice.mp3
 minimax speech clone --file-id <file_id> --voice-id ceo_voice
 
 # Voice design
-minimax speech design --prompt "Warm professional female narrator" \\
+minimax speech design --prompt "Warm professional female narrator" \
   --preview "Precision rubber belts." --voice-id narrator_voice
+
+# List preset voices
+minimax speech list-voices
 
 # Video generation (T2V)
 minimax video generate --prompt "A factory conveyor belt in motion"
 
 # Video generation (I2V)
-minimax video generate --prompt "The product slowly rotating" \\
+minimax video generate --prompt "The product slowly rotating" \
   --first-frame https://example.com/product-shot.jpg
+
+# Video with first and last frame
+minimax video generate --prompt "Product transitions from day to night" \
+  --first-frame https://example.com/day.jpg \
+  --last-frame https://example.com/night.jpg
 
 # Poll video task
 minimax video query <task_id>
+
+# Retrieve generated video file
+minimax video retrieve <file_id>
 ```
 
-### List voices
-```bash
-minimax speech list-voices
+## Claude Code Integration
+
+This CLI is designed to be called by Claude Code Skills. A skill instructs Claude to invoke `minimax` via the Bash tool — zero MCP tool schema overhead.
+
+Example skill instruction:
+```
+Use the minimax CLI to generate images:
+  minimax image generate --prompt "<description>" --aspect-ratio 16:9
 ```
 
-## MCP Tools
-
-Once installed, call these tools in Claude Code:
-
-```
-mcp__minimax__generate_image(...)      # Image (T2I / I2I)
-mcp__minimax__synthesize_speech(...)   # TTS
-mcp__minimax__create_long_speech_task(...) + query_long_speech_task(...)
-mcp__minimax__upload_audio(...) + clone_voice(...)
-mcp__minimax__design_voice(...)
-mcp__minimax__get_voice(...) / delete_voice(...) / list_voices()
-mcp__minimax__generate_video(...)      # Video (T2V / I2V)
-mcp__minimax__query_video_task(...)
-mcp__minimax__retrieve_video_file(...)
-```
+See the `.claude/skills/` directory in your project for MiniMax skill files.
 
 ## Uninstall
 
 ```bash
-claude mcp remove minimax
+uv tool uninstall minimax
 ```
-
-Restart Claude Code.
 
 ## Development
 
@@ -135,11 +124,11 @@ Restart Claude Code.
 gh repo clone Changhochien/minimax
 cd minimax
 
-# Test MCP server
-uv run fastmcp dev src/minimax/mcp/__init__.py
-
 # Test CLI
 uv run python src/minimax_cli.py --help
+uv run python src/minimax_cli.py image --help
+uv run python src/minimax_cli.py speech --help
+uv run python src/minimax_cli.py video --help
 ```
 
 ## Architecture
@@ -151,15 +140,14 @@ minimax/
 │   │   ├── api/           # HTTP client (httpx)
 │   │   ├── image/         # Image generation
 │   │   ├── speech/        # TTS + voice cloning/design
-│   │   ├── video/         # Video generation
-│   │   └── mcp/           # FastMCP server
+│   │   └── video/         # Video generation
 │   └── minimax_cli.py     # Typer CLI entry point
 ├── pyproject.toml
 ├── README.md
 └── install.sh
 ```
 
-Both the CLI and MCP server share the same `minimax.*` Python package — no duplicated API code.
+The CLI and shared API layer are in the same package — no duplicated code.
 
 ## API Details
 
